@@ -27,8 +27,6 @@ To test this spam detection model, follow these steps:
 1. Start the server:
 
    ```bash
-   uvicorn spam_detection_api:app --reload
-   # or
    uvicorn spam_detection_api:app --reload --port 8001
    ```
 
