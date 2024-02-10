@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import nltk
+import string
+import re
 import plotly.graph_objects as go
 from joblib import load
 
@@ -17,6 +20,47 @@ def load_data(path):
 # @st.cache_data
 def load_model(path):
     return load(path)
+
+def preprocess_text(text):
+    #pre-processing
+    stop_words = set(nltk.corpus.stopwords.words("english"))
+    spetial_chars = set(string.printable) - set(string.ascii_letters) - set(" ")
+    escaped_chars = [re.escape(c) for c in spetial_chars]
+    regex = re.compile(f"({'|'.join(escaped_chars)})")
+    stemmer = nltk.stem.porter.PorterStemmer()
+    url_regex = re.compile("(?P<url>https?://[^\s]+)")
+
+    # capitalization
+    text = text.lower()
+
+    # remove urls
+    text = re.sub(url_regex," ",text)
+    
+    # tokenization
+    text = nltk.word_tokenize(text, language='english')
+        
+    # stop words removal
+    text = [word for word in text if word not in stop_words]
+    
+    # noise removal
+    text = [word for word in text if word.isalpha()]
+    
+    # stemming
+    text = [stemmer.stem(word) for word in text]
+    
+    return ' '.join(text)
+
+def plot_calibration_graphs(model):
+    
+    #load the calibration file
+    calibration = load_model("data/calibration.joblib")
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches(5,5)
+
+    calibration[model].plot(ax = ax)
+
+    st.pyplot(fig)
 
 
 def plot_confusion_matrix(conf_matrix):
@@ -69,7 +113,6 @@ def display_metrics(metrics):
 def display_model_info(model_name, description):
     st.markdown(f"# {model_name}")
     st.write(description)
-
 
 # Common function to collect model parameters
 def collect_model_params():
